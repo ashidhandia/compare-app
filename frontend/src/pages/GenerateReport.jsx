@@ -131,6 +131,25 @@ export default function GenerateReport() {
     setComment("");
   };
 
+  // --- UPDATED CANCEL FUNCTION ---
+  const handleCancel = () => {
+    // 1. Stop the polling mechanism
+    setJobId(null); 
+    
+    // 2. Clear the local storage so it doesn't try to resume later
+    localStorage.removeItem("active_job_id");
+
+    // 3. Reset all UI states to default
+    setIsLoading(false);
+    setProgress(0);
+    
+    // 4. IMPORTANT: Clear the URL input to return to "fresh start" state
+    setUrl(""); 
+    
+    // 5. Ensure we are looking at the 'empty' view, not a partial report
+    setReportData(null);
+  };
+
   const startAnalysis = async (link, forceRefresh = false) => {
     setIsLoading(true);
     setProgress(0);
@@ -175,12 +194,12 @@ export default function GenerateReport() {
   };
 
   useEffect(() => {
-  const savedJobId = localStorage.getItem("active_job_id");
-  if (savedJobId && !jobId && !reportData) {
-    setJobId(savedJobId);
-    setIsLoading(true);
-  }
-}, []);
+    const savedJobId = localStorage.getItem("active_job_id");
+    if (savedJobId && !jobId && !reportData) {
+      setJobId(savedJobId);
+      setIsLoading(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!jobId) return;
@@ -298,12 +317,63 @@ export default function GenerateReport() {
             <div style={{ maxWidth: "680px", margin: "0 auto 12px", position: "sticky", top: "20px", zIndex: 50 }}>
               <form onSubmit={handleSearch} style={{ display: "flex", alignItems: "center", backgroundColor: "white", borderRadius: "16px", padding: "6px", boxShadow: isFocused ? "0 12px 35px -8px rgba(15, 23, 42, 0.15), 0 0 0 2px #0F172A" : "0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)", border: "1px solid #E2E8F0", transition: "all 0.2s" }}>
                 <div style={{ paddingLeft: "14px" }}><Search size={18} color={isFocused ? "#0F172A" : "#94A3B8"} /></div>
-                <input type="text" placeholder="Paste Google Scholar profile URL..." value={url} onChange={(e) => setUrl(e.target.value)} onFocus={() => setIsFocused(true)} onBlur={() => setIsFocused(false)} disabled={isLoading} style={{ flex: 1, height: "40px", border: "none", outline: "none", fontSize: "14px", marginLeft: "10px", width: "100%" }} />
-                <button type="submit" disabled={isLoading || !url.trim()} style={{ height: "36px", padding: "0 20px", borderRadius: "10px", backgroundColor: isLoading ? "#94A3B8" : "#0F172A", color: "white", border: "none", cursor: "pointer", fontWeight: "600" }}>
-                  {isLoading ? <Loader2 className="animate-spin" size={14} /> : <span>Analyze</span>}
-                </button>
+                
+                <input 
+                  type="text" 
+                  placeholder="Paste Google Scholar profile URL..." 
+                  value={url} 
+                  onChange={(e) => setUrl(e.target.value)} 
+                  onFocus={() => setIsFocused(true)} 
+                  onBlur={() => setIsFocused(false)} 
+                  disabled={isLoading} 
+                  style={{ flex: 1, height: "40px", border: "none", outline: "none", fontSize: "14px", marginLeft: "10px", width: "100%" }} 
+                />
+
+                {/* --- CANCEL / ANALYZE BUTTON TOGGLE --- */}
+                {isLoading ? (
+                  <button 
+                    type="button" 
+                    onClick={handleCancel} 
+                    style={{ 
+                      height: "36px", 
+                      padding: "0 16px", 
+                      borderRadius: "10px", 
+                      backgroundColor: "#FEE2E2", 
+                      color: "#DC2626", 
+                      border: "1px solid #FECACA", 
+                      cursor: "pointer", 
+                      fontWeight: "600",
+                      fontSize: "13px",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "6px",
+                      marginRight: "4px"
+                    }}
+                  >
+                    <X size={14} strokeWidth={3} /> Cancel
+                  </button>
+                ) : (
+                  <button 
+                    type="submit" 
+                    disabled={!url.trim()} 
+                    style={{ 
+                      height: "36px", 
+                      padding: "0 20px", 
+                      borderRadius: "10px", 
+                      backgroundColor: "#0F172A", 
+                      color: "white", 
+                      border: "none", 
+                      cursor: "pointer", 
+                      fontWeight: "600" 
+                    }}
+                  >
+                    Analyze
+                  </button>
+                )}
+                
               </form>
             </div>
+
             {isLoading && (
               <div style={{ marginBottom: "20px", textAlign: "center", maxWidth: "400px", margin: "0 auto 30px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "6px", fontSize: "12px", color: "#64748B" }}>
@@ -315,6 +385,7 @@ export default function GenerateReport() {
                 </div>
               </div>
             )}
+
             {!isLoading && (
               <div className="animate-fade-in">
                 {recents.length > 0 && (
