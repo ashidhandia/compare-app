@@ -149,6 +149,7 @@ export default function GenerateReport() {
         if (!response.ok) throw new Error("Failed to start analysis");
         const data = await response.json();
         setJobId(data.job_id);
+        localStorage.setItem("active_job_id", data.job_id);
     } catch (error) {
         console.error(error);
         setIsLoading(false);
@@ -174,6 +175,14 @@ export default function GenerateReport() {
   };
 
   useEffect(() => {
+  const savedJobId = localStorage.getItem("active_job_id");
+  if (savedJobId && !jobId && !reportData) {
+    setJobId(savedJobId);
+    setIsLoading(true);
+  }
+}, []);
+
+  useEffect(() => {
     if (!jobId) return;
     const interval = setInterval(async () => {
         try {
@@ -183,6 +192,7 @@ export default function GenerateReport() {
             if (data.progress) setProgress(data.progress);
             if (data.status === "completed") {
                 clearInterval(interval);
+                localStorage.removeItem("active_job_id");
                 setReportData(data.result);
                 cachedReport = data.result;
                 setJobId(null);
@@ -191,6 +201,7 @@ export default function GenerateReport() {
                 addToRecents(data.result);
             } else if (data.status === "failed") {
                 clearInterval(interval);
+                localStorage.removeItem("active_job_id");
                 setJobId(null);
                 setIsLoading(false);
                 alert("Analysis failed: " + (data.error || "Unknown error"));
